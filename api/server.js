@@ -131,21 +131,47 @@ app.post('/account/command', (req, res) => {
     }
 });
 
-app.get('/accounts/all', (req, res) => {
-    try {
-        const account_commands = database.map(entry => ({
-            user: entry.user,
-            discord_id: String(entry.discord_id),
-            command: entry.command || null
-        }));
-        
-        res.status(200).json(account_commands);
-    } catch (error) {
-        console.error('Error fetching accounts:', error);
-        
-        res.status(500).send('Error fetching accounts');
-    }
-});
+app.route('/accounts/all')
+    .get((req, res) => {
+        try {
+            const account_commands = database.map(entry => ({
+                user: entry.user,
+                discord_id: String(entry.discord_id),
+                command: entry.command || null
+            }));
+
+            res.status(200).json(account_commands);
+        } catch (error) {
+            console.error('Error fetching accounts:', error);
+
+            res.status(500).send('Internal Server Error!');
+        }
+    })
+    .post((req, res) => {
+        const { user, passcode, discord_id } = req.body;
+
+        if (!user || !passcode || !discord_id) {
+            return res.status(400).send('Invalid username');
+        }
+
+        const duplicate_user = database.some(entry => entry.user.toLowerCase() === user.toLowerCase());
+        const duplicate_discord = database.some(entry => String(entry.discord_id) === String(discord_id));
+
+        if (duplicate_user) {
+            return res.status(400).send('Duplicate username');
+        }
+
+        if (duplicate_discord) {
+            return res.status(400).send('Discord account already linked');
+        }
+
+        const new_entry = { user, passcode, discord_id: String(discord_id) };
+        database.push(new_entry);
+
+        save_db();
+
+        res.status(201).send(`Added for user: ${user}`);
+    })
 
 // Start Server
 
