@@ -5,6 +5,9 @@
 2. Connect **any** account to LoveBridge!
 3. Tons of active updates!
 4. Includes a dynamic API, allows for tons of users whilst maintaining **low latency**!
+## Release  📖
+Join our Discord server for a full, released & maintained version!
+- [discord.gg/qrpdzD3zjb](https://discord.gg/qrpdzD3zjb)
 ## Script  :scroll:
 ```lua
 loadstring(game:HttpGet(
