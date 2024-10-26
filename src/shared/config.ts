@@ -1,8 +1,3 @@
-// Quick access to all necessary services.
-// These are all of the services used inside of Starry as of 10/14/2024.
-
-// (And probably all, or most that will ever be used).
-
 // Declare Constants
 
 const whitespace = '  ';
