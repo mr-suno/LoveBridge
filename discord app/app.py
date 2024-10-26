@@ -38,4 +38,4 @@ except Exception as error:
 
 # Start Discord App
 
-app.run('MTI5OTU3NTA0NDkxMzEwMjg4OA.Gwaxcn.geUU8su8JurFNcqpsyVl64I8a20Ihke48VvOCE')
+app.run('Enter App Token')
