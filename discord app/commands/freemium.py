@@ -25,7 +25,7 @@ async def command(CTX: commands.Context, outcome: str):
             for result in results:
                 if str(result.get('discord_id')) == my_id:
                     embed = discord.Embed(title='LoveBridge ‎ ❤️',
-                                        description=f'Done! Your player has, or will {outcome} soon.\n\n- Didn\'t do the action? Create a ticket in <#1299581734358225008>!',
+                                        description=f'Done! Your player has, or will {outcome} soon.\n- Didn\'t do the action? Create a ticket in <#1299581734358225008>!',
                                         color=discord.Color.green())
 
                     embed.set_author(name='Developed by Suno', 
