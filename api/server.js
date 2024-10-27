@@ -12,6 +12,20 @@ app.use(express.json());
 let database = [];
 let commands = [];
 
+const request_password = 'example_password';
+const request_username = 'lovebridge';
+
+const middleware = (req, res, next) => {
+    const username = req.headers['username'];
+    const password = req.headers['password'];
+
+    if (username === request_username && password === request_password) {
+        next();
+    } else {
+        res.status(401).send('Unauthorized. Check login details!');
+    }
+}
+
 const cache = path.join(__dirname, '..', 'cache.json');
 
 // Cache Database
@@ -49,7 +63,7 @@ load_db();
 
 // Setup Server
 
-app.post('/linked', async (req, res) => {
+app.post('/linked', middleware, async (req, res) => {
     const { user, passcode, discord_id } = req.body;
     const url = `https://users.roproxy.com/v1/users/search?keyword=${user}&limit=10`;
 
@@ -102,7 +116,7 @@ app.post('/linked', async (req, res) => {
     }
 });
 
-app.post('/account/command', (req, res) => {
+app.post('/account/command', middleware, (req, res) => {
     const { discord_id, command } = req.body;
 
     try {
@@ -147,7 +161,7 @@ app.route('/accounts/all')
             res.status(500).send('Internal Server Error!');
         }
     })
-    .post((req, res) => {
+    .post(middleware, (req, res) => {
         const { user, passcode, discord_id } = req.body;
 
         if (!user || !passcode || !discord_id) {
@@ -171,7 +185,7 @@ app.route('/accounts/all')
         save_db();
 
         res.status(201).send(`Added for user: ${user}`);
-    })
+    });
 
 // Start Server
 
