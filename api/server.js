@@ -1,6 +1,9 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
+
+require('dotenv').config();
 
 // Constants
 
@@ -9,11 +12,27 @@ const PORT = 3000;
 
 app.use(express.json());
 
-let database = [];
-let commands = [];
+const mongoDB_URI = 'mongodb+srv://makrislogan5:czAVxAFtp9Zbwn31@lovebridge.d61lk.mongodb.net/?retryWrites=true&w=majority&appName=LoveBridge';
 
-const request_password = 'example_password';
-const request_username = 'lovebridge';
+const client_options = {
+    serverApi: {
+        version: '1',
+        strict: true,
+        deprecationErrors: true
+    }
+};
+
+async function run() {
+    try {
+        await mongoose.connect(mongoDB_URI, client_options);
+        await mongoose.connection.db.admin().command({ ping: 1 });
+
+        conmsole.log('Connected to MongoDB!');
+    } finally {
+        await mongoose.disconnect();
+    }
+}
+run().catch(console.dir);
 
 const middleware = (req, res, next) => {
     const username = req.headers['username'];
@@ -26,40 +45,23 @@ const middleware = (req, res, next) => {
     }
 }
 
-const cache = path.join(__dirname, '..', 'cache.json');
+// Connect to MongoDB
 
-// Cache Database
+mongoose.connect(mongoDB_URI)
+    .then(() => console.log('MongoDB Connected!'))
+    .catch(code => console.error('MongoDB Connection Failure:', code));
 
-const load_db = () => {
-    try {
-        if (!fs.existsSync(cache)) { return }
+const schema = new mongoose.Schema({
+    user: { type: String, required: true, unique: true },
+    passcode: { type: String, required: true },
+    discord_id: { type: String, required: true, unique: true },
+    command: { type: String, default: null }
+});
 
-        const data = fs.readFileSync(cache, 'utf8');
+const user = mongoose.model('User', schema);
 
-        database = JSON.parse(data);
-        database = database.map(entry => ({
-            ...entry,
-            discord_id: String(entry.discord_id),
-            command: entry.command || null
-        }));
-
-        console.log('Loaded DB:', database)
-    } catch (error) {
-        console.log('Experienced Server Issue: Failed to reach database!');
-    }
-}
-
-const save_db = () => {
-    try {
-        fs.writeFileSync(cache, JSON.stringify(database, null, 2));
-
-        console.log('DB Saved!');
-    } catch (error) {
-        console.error('Failed DB Save:', error);
-    }
-}
-
-load_db();
+const request_password = 'BAE60B0C316919D7EDB4AAC8E3CD969EFDF64AB6F3D57AEDBB6755644D3726';
+const request_username = 'A1EC3106057E29DCFF82ECEBC78522BDE740C3C9F2EF6D1E8293';
 
 // Setup Server
 
@@ -74,13 +76,8 @@ app.post('/linked', middleware, async (req, res) => {
         const matched = result.data.find((item) => item.name.toLowerCase() === user.toLowerCase());
 
         if (matched) {
-            const duplicate_user = database.some(entry => 
-                entry.user.toLowerCase() === user.toLowerCase()
-            );
-
-            const duplicate_discord = database.some(entry =>
-                String(entry.discord_id) === String(discord_id)
-            );
+            const duplicate_user = await User.findOne({ user: user.toLowerCase() });
+            const duplicate_discord = await User.findOne({ discord_id: discord_id });
 
             if (duplicate_user) {
                 return res.status(400).send('Duplicate username');
@@ -90,53 +87,36 @@ app.post('/linked', middleware, async (req, res) => {
                 return res.status(400).send('Discord account already linked');
             }
 
-            const new_entry = {
-                user,
-                passcode,
-                discord_id: String(discord_id)
-            };
+            const new_entry = new User({ user, passcode, discord_id: String(discord_id) });
+            await new_entry.save();
 
-            database.push({ user, passcode, discord_id });
-
-            fs.writeFileSync(cache, JSON.stringify(database, null, 2));
-
-            res.status(200).send(
-                `User:${user}|Passcode:${passcode}`
-            );
+            res.status(200).send(`User:${user}|Passcode:${passcode}`);
         } else {
-            res.status(404).send(
-                'Invalid username'
-            );
+            res.status(404).send('Invalid username');
         }
     } catch (error) {
         console.log(`Experienced Server Issue: ${error}`);
-        res.status(500).send(
-            'Current Server Error!'
-        );
+
+        res.status(500).send('Current Server Error!');
     }
 });
 
-app.post('/account/command', middleware, (req, res) => {
+app.post('/account/command', middleware, async (req, res) => {
     const { discord_id, command } = req.body;
 
     try {
-        const userIndex = database.findIndex(entry => 
-            String(entry.discord_id) === String(discord_id)
-        );
+        const user = await User.findOne({ discord_id: String(discord_id) });
 
-        if (userIndex === -1) {
+        if (!user) {
             return res.status(404).send('Account not found');
         }
 
-        database[userIndex] = {
-            ...database[userIndex],
-            command: command
-        };
+        user.command = command;
 
-        save_db();
+        await user.save();
 
         console.log(`Command "${command}" set for user ${discord_id}`);
-        
+
         res.status(200).send('Command successful');
     } catch (error) {
         console.log(`Experienced Server Issue: ${error}`);
@@ -146,13 +126,9 @@ app.post('/account/command', middleware, (req, res) => {
 });
 
 app.route('/accounts/all')
-    .get((req, res) => {
+    .get(async (req, res) => {
         try {
-            const account_commands = database.map(entry => ({
-                user: entry.user,
-                discord_id: String(entry.discord_id),
-                command: entry.command || null
-            }));
+            const account_commands = await User.find({}, { _id: 0, user: 1, discord_id: 1, command: 1 });
 
             res.status(200).json(account_commands);
         } catch (error) {
@@ -161,15 +137,15 @@ app.route('/accounts/all')
             res.status(500).send('Internal Server Error!');
         }
     })
-    .post(middleware, (req, res) => {
+    .post(middleware, async (req, res) => {
         const { user, passcode, discord_id } = req.body;
 
         if (!user || !passcode || !discord_id) {
             return res.status(400).send('Invalid username');
         }
 
-        const duplicate_user = database.some(entry => entry.user.toLowerCase() === user.toLowerCase());
-        const duplicate_discord = database.some(entry => String(entry.discord_id) === String(discord_id));
+        const duplicate_user = await User.findOne({ user: user.toLowerCase() });
+        const duplicate_discord = await User.findOne({ discord_id: discord_id });
 
         if (duplicate_user) {
             return res.status(400).send('Duplicate username');
@@ -179,10 +155,8 @@ app.route('/accounts/all')
             return res.status(400).send('Discord account already linked');
         }
 
-        const new_entry = { user, passcode, discord_id: String(discord_id) };
-        database.push(new_entry);
-
-        save_db();
+        const new_entry = new User({ user, passcode, discord_id: String(discord_id) });
+        await new_entry.save();
 
         res.status(201).send(`Added for user: ${user}`);
     });
