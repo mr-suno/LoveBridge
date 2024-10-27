@@ -8,6 +8,10 @@ async def command(CTX: commands.Context, outcome: str):
     async with aiohttp.ClientSession() as session:
         async with session.post(
             url='http://localhost:3000/account/command',
+            headers={
+                'username': 'lovebridge',
+                'password': 'example_password'
+            },
             json={'discord_id': my_id, 'command': outcome}
         ) as command_response:
             if command_response.status != 200:
