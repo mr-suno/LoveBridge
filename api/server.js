@@ -12,8 +12,8 @@ app.use(express.json());
 let database = [];
 let commands = [];
 
-const request_password = 'example_password';
-const request_username = 'lovebridge';
+const request_password = 'BAE60B0C316919D7EDB4AAC8E3CD969EFDF64AB6F3D57AEDBB6755644D3726';
+const request_username = 'A1EC3106057E29DCFF82ECEBC78522BDE740C3C9F2EF6D1E8293';
 
 const middleware = (req, res, next) => {
     const username = req.headers['username'];
