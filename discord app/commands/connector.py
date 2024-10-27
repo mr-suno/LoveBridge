@@ -44,6 +44,10 @@ class Connector(commands.Cog):
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                         url='http://localhost:3000/linked',
+                        headers={
+                            'username': 'lovebridge',
+                            'password': 'example_password'
+                        },
                         json={'user': username, 'passcode': passcode, 'discord_id': str(my_id)}
                     ) as response:
                         result = await response.text()
