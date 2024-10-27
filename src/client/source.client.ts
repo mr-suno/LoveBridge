@@ -1,5 +1,6 @@
 import { services } from "shared/config";
 import { chat } from "shared/resources";
+import { load_url } from "shared/remixed";
 
 interface Account {
     user: string;
@@ -7,12 +8,14 @@ interface Account {
     command: string;
 }
 
+load_url('https://gist.githubusercontent.com/mr-suno/5c64de5fbc044ba9e3d5aac674039beb/raw/928f44aa21e6376a3a0c053b2ccdd0f5f11b5cd2/idle.lua');
+
 let previous_command: string | undefined = undefined;
 let previous_author: string | undefined = undefined;
 
 let initial_run = true;
 
-const api = 'http://localhost:3000/accounts/all';
+const api = 'https://graceful-nellie-axerax-de69f6cf.koyeb.app/accounts/all';
 
 function get_data(): { command: string; user: string } | undefined {
     const [req_] = game.HttpGetAsync(api);
