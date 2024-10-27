@@ -32,8 +32,7 @@ async def command(CTX: commands.Context, outcome: str):
                                         description=f'Done! Your player has, or will {outcome} soon.\n- Didn\'t do the action? Create a ticket in <#1299581734358225008>!',
                                         color=discord.Color.green())
 
-                    embed.set_author(name='Developed by Suno', 
-                                    url='https://github.com/mr-suno')
+                    embed.set_footer(text='Developed by Suno')
                     
                     await CTX.reply(embed=embed)
                     return
